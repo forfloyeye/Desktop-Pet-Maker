@@ -1,0 +1,31 @@
+{
+  "name": "desktop-pet-maker",
+  "version": "1.0.0",
+  "description": "A transparent desktop pet built with Electron.",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron ."
+  },
+  "keywords": [
+    "electron",
+    "desktop-pet"
+  ],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "electron": "^37.2.0"
+  },
+  "dependencies": {
+    "@pixi/app": "^6.5.10",
+    "@pixi/core": "^6.5.10",
+    "@pixi/display": "^6.5.10",
+    "@pixi/loaders": "^6.5.10",
+    "@pixi/math": "^6.5.10",
+    "@pixi/sprite": "^6.5.10",
+    "@pixi/ticker": "^6.5.10",
+    "@pixi/utils": "^6.5.10",
+    "live2dcubismcore": "^1.0.2",
+    "pixi-live2d-display": "^0.4.0",
+    "pixi.js": "^6.5.10"
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "skin": {
+    "mode": "image",
+    "width": 220,
+    "height": 220,
+    "showBuiltInProps": false,
+    "images": {
+      "walk": "assets/skins/mantou/main.png",
+      "dessert": "assets/skins/mantou/main.png",
+      "book": "assets/skins/mantou/main.png",
+      "rest": "assets/skins/mantou/main.png"
+    }
+  }
+}
