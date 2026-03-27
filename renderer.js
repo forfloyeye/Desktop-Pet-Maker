@@ -184,7 +184,7 @@ function setBubblePreset(name = 'topCenter') {
 }
 
 function randomizeDessertBubble() {
-  const names = ['topLeft', 'topCenter', 'topRight', 'upperLeft', 'upperRight'];
+  const names = ['topLeft', 'topCenter'];
   setBubblePreset(pickRandom(names));
 }
 
@@ -387,8 +387,11 @@ function hideMenu() {
 }
 
 function positionMenu(x, y) {
-  menu.style.left = `${Math.min(x, window.innerWidth - 148)}px`;
-  menu.style.top = `${Math.min(y, window.innerHeight - 190)}px`;
+  menu.classList.remove('hidden');
+  const menuW = menu.offsetWidth;
+  const menuH = menu.offsetHeight;
+  menu.style.left = `${Math.min(x, window.innerWidth - menuW - 4)}px`;
+  menu.style.top = `${Math.min(y, window.innerHeight - menuH - 4)}px`;
 }
 
 async function applyAction(action) {
@@ -491,7 +494,6 @@ window.addEventListener('pointercancel', endDrag);
 window.addEventListener('contextmenu', (event) => {
   event.preventDefault();
   positionMenu(event.clientX, event.clientY);
-  menu.classList.remove('hidden');
 });
 
 window.addEventListener('pointerdown', (event) => {
@@ -504,6 +506,11 @@ menu.addEventListener('click', (event) => {
   event.preventDefault();
   const button = event.target.closest('button[data-action]');
   if (!button) {
+    return;
+  }
+
+  if (button.dataset.action === 'quit') {
+    window.desktopPet.quit();
     return;
   }
 

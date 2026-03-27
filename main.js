@@ -294,6 +294,10 @@ ipcMain.on('pet:snap-to-floor', () => {
   moveToFloor(petWindow.getBounds().x);
 });
 
+ipcMain.on('pet:quit', () => {
+  app.quit();
+});
+
 app.on('window-all-closed', () => {
   if (animationTimer) {
     clearInterval(animationTimer);

@@ -1,45 +1,49 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>桌宠</title>
-    <link rel="stylesheet" href="styles.css" />
-  </head>
-  <body>
-    <main class="pet-stage">
-      <section id="pet-shell" class="pet-shell" aria-label="桌宠">
-        <div id="speech" class="speech-bubble">可以给我一个馒头吗？</div>
-        <section id="pet" class="pet facing-right mood-idle">
-          <div class="pet-shadow"></div>
-          <div id="pet-live2d" class="pet-live2d"></div>
-          <img id="pet-sprite" class="pet-sprite" alt="桌宠形象" />
-          <div class="pet-body">
-            <div class="pet-face">
-              <span class="eye eye-left"></span>
-              <span class="eye eye-right"></span>
-              <span class="mouth"></span>
-            </div>
-            <div id="prop" class="pet-prop" aria-hidden="true"></div>
-          </div>
-          <div class="pet-feet">
-            <span></span>
-            <span></span>
-          </div>
-        </section>
-      </section>
 
-      <section id="menu" class="pet-menu hidden" aria-label="互动菜单">
-        <button data-action="walk">自由散步</button>
-        <button data-action="dessert">吃甜点</button>
-        <button data-action="book">看书</button>
-        <button data-action="rest">休息一下</button>
-      </section>
-    </main>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>桌宠</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
 
-    <script src="node_modules/pixi.js/dist/browser/pixi.min.js"></script>
-    <script src="node_modules/live2dcubismcore/live2dcubismcore.min.js"></script>
-    <script src="node_modules/pixi-live2d-display/dist/cubism4.min.js"></script>
-    <script src="renderer.js"></script>
-  </body>
+<body>
+  <main class="pet-stage">
+    <section id="pet-shell" class="pet-shell" aria-label="桌宠">
+      <div id="speech" class="speech-bubble">可以给我一个馒头吗？</div>
+      <section id="pet" class="pet facing-right mood-idle">
+        <div class="pet-shadow"></div>
+        <div id="pet-live2d" class="pet-live2d"></div>
+        <img id="pet-sprite" class="pet-sprite" alt="桌宠形象" />
+        <div class="pet-body">
+          <div class="pet-face">
+            <span class="eye eye-left"></span>
+            <span class="eye eye-right"></span>
+            <span class="mouth"></span>
+          </div>
+          <div id="prop" class="pet-prop" aria-hidden="true"></div>
+        </div>
+        <div class="pet-feet">
+          <span></span>
+          <span></span>
+        </div>
+      </section>
+    </section>
+
+    <section id="menu" class="pet-menu hidden" aria-label="互动菜单">
+      <button data-action="walk">自由散步</button>
+      <button data-action="dessert">吃甜点</button>
+      <button data-action="book">看书</button>
+      <button data-action="rest">休息一下</button>
+      <button data-action="quit" class="menu-quit">退出</button>
+    </section>
+  </main>
+
+  <script src="node_modules/pixi.js/dist/browser/pixi.min.js"></script>
+  <script src="node_modules/live2dcubismcore/live2dcubismcore.min.js"></script>
+  <script src="node_modules/pixi-live2d-display/dist/cubism4.min.js"></script>
+  <script src="renderer.js"></script>
+</body>
+
 </html>

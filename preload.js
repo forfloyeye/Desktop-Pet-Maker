@@ -33,4 +33,7 @@ contextBridge.exposeInMainWorld('desktopPet', {
   snapToFloor() {
     ipcRenderer.send('pet:snap-to-floor');
   },
+  quit() {
+    ipcRenderer.send('pet:quit');
+  },
 });

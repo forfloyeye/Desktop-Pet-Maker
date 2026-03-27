@@ -380,7 +380,16 @@ body {
   background: rgba(241, 91, 93, 0.12);
 }
 
+.pet-menu .menu-quit {
+  color: #e03131;
+}
+
+.pet-menu .menu-quit:hover {
+  background: rgba(224, 49, 49, 0.1);
+}
+
 @keyframes float-idle {
+
   0%,
   100% {
     translate: 0 0;
@@ -392,6 +401,7 @@ body {
 }
 
 @keyframes bounce {
+
   0%,
   100% {
     translate: 0 0;
