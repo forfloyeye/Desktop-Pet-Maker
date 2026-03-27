@@ -40,7 +40,7 @@ body {
   bottom: 18px;
   z-index: 10;
   width: calc(var(--pet-width, 150px) + 180px);
-  height: calc(var(--pet-height, 150px) + 104px);
+  height: calc(var(--pet-height, 150px) + 196px);
   cursor: grab;
   touch-action: none;
 }
@@ -57,6 +57,10 @@ body {
   width: var(--pet-width, 150px);
   transform-origin: center bottom;
   animation: float-idle 1.8s ease-in-out infinite;
+}
+
+.pet-shell.chat-open .pet {
+  bottom: 78px;
 }
 
 .pet-sprite {
@@ -344,6 +348,68 @@ body {
   border-right: 3px solid rgba(90, 54, 18, 0.16);
   border-bottom: 3px solid rgba(90, 54, 18, 0.16);
   transform: translateX(-50%) rotate(45deg);
+}
+
+.chat-panel {
+  position: absolute;
+  left: 50%;
+  bottom: 8px;
+  z-index: 6;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 236px;
+  padding: 8px;
+  border: 2px solid rgba(90, 54, 18, 0.14);
+  border-radius: 16px;
+  background: rgba(255, 250, 244, 0.96);
+  box-shadow: 0 10px 22px rgba(90, 54, 18, 0.1);
+  transform: translateX(-50%);
+}
+
+.chat-panel.hidden {
+  display: none;
+}
+
+.chat-input,
+.chat-send {
+  -webkit-app-region: no-drag;
+}
+
+.chat-input {
+  flex: 1;
+  min-width: 0;
+  padding: 9px 12px;
+  border: 1px solid rgba(90, 54, 18, 0.16);
+  border-radius: 12px;
+  outline: none;
+  background: rgba(255, 255, 255, 0.92);
+  color: #5f3915;
+  font-size: 13px;
+}
+
+.chat-input:focus {
+  border-color: rgba(241, 91, 93, 0.5);
+  box-shadow: 0 0 0 3px rgba(241, 91, 93, 0.12);
+}
+
+.chat-input::placeholder {
+  color: rgba(95, 57, 21, 0.56);
+}
+
+.chat-send {
+  flex: none;
+  padding: 9px 12px;
+  border: 0;
+  border-radius: 12px;
+  background: #f15b5d;
+  color: #fff9f3;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.chat-send:hover {
+  background: #e14f51;
 }
 
 .pet-menu {

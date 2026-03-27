@@ -169,7 +169,7 @@ function createWindow() {
   const petWidth = petConfig.skin.width || 150;
   const petHeight = petConfig.skin.height || 150;
   const bubbleWidthPadding = 180;
-  const bubbleHeightPadding = 140;
+  const bubbleHeightPadding = 232;
   const windowWidth = Math.max(260, petWidth + bubbleWidthPadding);
   const windowHeight = Math.max(300, petHeight + bubbleHeightPadding);
 

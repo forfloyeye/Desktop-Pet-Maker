@@ -4,8 +4,14 @@ const menu = document.getElementById('menu');
 const live2dContainer = document.getElementById('pet-live2d');
 const petSprite = document.getElementById('pet-sprite');
 const speech = document.getElementById('speech');
+const chatPanel = document.getElementById('chat-panel');
+const chatInput = document.getElementById('chat-input');
+const chatSend = document.getElementById('chat-send');
 
 const defaultSpeech = '可以给我一个馒头吗？';
+const restPrompt = '需要我陪你聊聊天吗？';
+const maxChatInputLength = 24;
+const maxReplyLength = 18;
 const dessertSuggestions = [
   '今日甜点：桂花糖蒸栗糕，软糯清甜，闻起来像秋天。',
   '今日甜点：杨枝甘露，芒果香很足，冰冰凉凉正合适。',
@@ -114,6 +120,32 @@ const bubblePresets = {
   upperLeft: { left: '26%', top: '54px', shiftX: '-50%', tailLeft: '78%' },
   upperRight: { left: '74%', top: '54px', shiftX: '-50%', tailLeft: '22%' },
 };
+const restReplyRules = [
+  {
+    keywords: ['累', '困', '疲惫', '好忙', '辛苦'],
+    replies: ['先歇一小会儿吧。', '抱抱你，缓口气。', '今天已经很努力了。'],
+  },
+  {
+    keywords: ['开心', '高兴', '顺利', '好耶', '不错'],
+    replies: ['那我也替你开心。', '听起来很棒呀。', '这份好心情收下了。'],
+  },
+  {
+    keywords: ['难过', '委屈', '烦', '压力', '崩溃'],
+    replies: ['我在，你慢慢说。', '先别急，我陪着你。', '不舒服就先停一下。'],
+  },
+  {
+    keywords: ['饿', '吃', '饭', '奶茶', '甜点'],
+    replies: ['想吃什么，我先记下。', '补充能量很重要。', '吃点喜欢的会好些。'],
+  },
+  {
+    keywords: ['工作', '上班', '学习', '写代码', '作业'],
+    replies: ['先做一点点也行。', '专注十分钟试试。', '我给你守着节奏。'],
+  },
+  {
+    keywords: ['晚安', '睡觉', '休息'],
+    replies: ['那就安心休息吧。', '盖好小被子哦。', '祝你做个好梦。'],
+  },
+];
 
 const actionMap = {
   walk: {
@@ -382,6 +414,60 @@ function setSpeech(text, options = {}) {
   speech.classList.toggle('speech-bubble--multiline', multiline);
 }
 
+function clampChatText(text, maxLength) {
+  return String(text || '')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .slice(0, maxLength);
+}
+
+function showChatPanel() {
+  petShell.classList.add('chat-open');
+  chatPanel.classList.remove('hidden');
+}
+
+function hideChatPanel() {
+  petShell.classList.remove('chat-open');
+  chatPanel.classList.add('hidden');
+  chatInput.value = '';
+}
+
+function buildChatReply(message) {
+  const normalized = clampChatText(message, maxChatInputLength).toLowerCase();
+
+  if (!normalized) {
+    return '我在，慢慢说。';
+  }
+
+  const matchedRule = restReplyRules.find((rule) =>
+    rule.keywords.some((keyword) => normalized.includes(keyword))
+  );
+
+  if (matchedRule) {
+    return pickRandom(matchedRule.replies);
+  }
+
+  const snippet = clampChatText(message, 8);
+  const fallback = `收到“${snippet}”啦。`;
+  return clampChatText(fallback, maxReplyLength) || '我有在认真听。';
+}
+
+function handleChatSubmit() {
+  if (state.action !== 'rest') {
+    return;
+  }
+
+  const message = clampChatText(chatInput.value, maxChatInputLength);
+  if (!message) {
+    setSpeech('先告诉我一点点吧。');
+    return;
+  }
+
+  chatInput.value = '';
+  setBubblePreset('topCenter');
+  setSpeech(buildChatReply(message));
+}
+
 function hideMenu() {
   menu.classList.add('hidden');
 }
@@ -409,8 +495,17 @@ async function applyAction(action) {
     speechText = `${quote.text}\n${quote.source}`;
     multiline = true;
     setBubblePreset('topCenter');
+  } else if (action === 'rest') {
+    speechText = restPrompt;
+    setBubblePreset('topCenter');
+    showChatPanel();
   } else {
     setBubblePreset('topCenter');
+    hideChatPanel();
+  }
+
+  if (action !== 'rest') {
+    hideChatPanel();
   }
 
   state.action = action;
@@ -437,7 +532,7 @@ async function applyAction(action) {
 }
 
 petShell.addEventListener('pointerdown', (event) => {
-  if (event.button !== 0 || menu.contains(event.target)) {
+  if (event.button !== 0 || menu.contains(event.target) || chatPanel.contains(event.target)) {
     return;
   }
 
@@ -509,6 +604,24 @@ menu.addEventListener('click', (event) => {
 
   applyAction(button.dataset.action);
   hideMenu();
+});
+
+chatSend.addEventListener('click', handleChatSubmit);
+
+chatInput.addEventListener('keydown', (event) => {
+  if (event.key !== 'Enter') {
+    return;
+  }
+
+  event.preventDefault();
+  handleChatSubmit();
+});
+
+chatInput.addEventListener('input', () => {
+  const limited = clampChatText(chatInput.value, maxChatInputLength);
+  if (limited !== chatInput.value) {
+    chatInput.value = limited;
+  }
 });
 
 window.desktopPet.onDirectionChange((direction) => {
