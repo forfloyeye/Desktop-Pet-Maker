@@ -643,10 +643,149 @@ body {
   background: #e14f51;
 }
 
+.word-reward {
+  position: fixed;
+  left: calc(18px + ((var(--pet-width, 150px) + 180px) / 2));
+  bottom: 12px;
+  z-index: 8;
+  width: 272px;
+  height: 320px;
+  pointer-events: none;
+  transform: translateX(-50%);
+}
+
+.word-reward.hidden {
+  display: none;
+}
+
+.word-reward__message {
+  position: absolute;
+  left: 50%;
+  bottom: 18px;
+  padding: 9px 14px;
+  border: 1px solid rgba(236, 154, 63, 0.35);
+  border-radius: 999px;
+  background: rgba(255, 248, 235, 0.96);
+  box-shadow: 0 12px 24px rgba(122, 74, 30, 0.18);
+  color: #a45a18;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+  transform: translateX(-50%);
+  animation: reward-message-rise 4.2s ease-out forwards;
+}
+
+.word-reward__lanterns {
+  position: absolute;
+  inset: 0;
+}
+
+.word-reward__lantern {
+  position: absolute;
+  bottom: 28px;
+  width: 28px;
+  height: 40px;
+  border-radius: 16px 16px 12px 12px;
+  background: linear-gradient(180deg, #ffe7a8 0%, #ffbf61 42%, #ef7a2d 100%);
+  box-shadow: 0 0 18px rgba(255, 186, 91, 0.65);
+  animation: sky-lantern-float 4.4s ease-out forwards;
+}
+
+.word-reward__lantern::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 6px;
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+  background: rgba(255, 249, 214, 0.95);
+  box-shadow: 0 0 10px rgba(255, 245, 182, 0.95);
+  transform: translateX(-50%);
+}
+
+.word-reward__lantern::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: -7px;
+  width: 10px;
+  height: 8px;
+  border-top: 2px solid rgba(151, 79, 23, 0.75);
+  border-left: 2px solid transparent;
+  border-right: 2px solid transparent;
+  transform: translateX(-50%);
+}
+
+.word-reward__lantern--left {
+  left: 28px;
+  animation-delay: 0.1s;
+}
+
+.word-reward__lantern--center {
+  left: 50%;
+  width: 34px;
+  height: 48px;
+  transform: translateX(-50%);
+  animation-delay: 0s;
+}
+
+.word-reward__lantern--right {
+  right: 30px;
+  animation-delay: 0.2s;
+}
+
+@keyframes sky-lantern-float {
+  0% {
+    opacity: 0;
+    transform: translate3d(0, 28px, 0) scale(0.82);
+  }
+
+  18% {
+    opacity: 1;
+  }
+
+  55% {
+    transform: translate3d(-4px, -100px, 0) scale(1);
+  }
+
+  100% {
+    opacity: 0;
+    transform: translate3d(8px, -230px, 0) scale(1.08);
+  }
+}
+
+@keyframes reward-message-rise {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, 20px) scale(0.94);
+  }
+
+  18% {
+    opacity: 1;
+    transform: translate(-50%, 0) scale(1);
+  }
+
+  82% {
+    opacity: 1;
+    transform: translate(-50%, -8px) scale(1);
+  }
+
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -22px) scale(0.98);
+  }
+}
+
 .pet-menu {
   position: absolute;
   z-index: 50;
-  min-width: 132px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  width: max-content;
+  min-width: 0;
   padding: 8px;
   -webkit-app-region: no-drag;
   border-radius: 18px;
@@ -661,9 +800,9 @@ body {
 }
 
 .pet-menu button {
-  width: 100%;
+  width: auto;
   margin: 0;
-  padding: 10px 12px;
+  padding: 10px 10px;
   border: 0;
   -webkit-app-region: no-drag;
   border-radius: 12px;
@@ -671,6 +810,7 @@ body {
   color: #5f3915;
   font-size: 14px;
   text-align: left;
+  white-space: nowrap;
 }
 
 .pet-menu button:hover {

@@ -22,6 +22,7 @@ const wordActions = document.getElementById('word-actions');
 const wordCheck = document.getElementById('word-check');
 const wordSkip = document.getElementById('word-skip');
 const wordClose = document.getElementById('word-close');
+const wordReward = document.getElementById('word-reward');
 const menuViewportPadding = 4;
 
 const defaultSpeech = '可以给我一个馒头吗？';
@@ -32,6 +33,8 @@ const dailyWordGoal = 10;
 const wordStudyStorageKey = 'desktop-pet-word-study';
 const wordStudyResetMarkerKey = 'desktop-pet-word-study-reset-marker';
 const forceResetWordStudyDate = '2026-03-30';
+const forceResetWordStudyToken = '2026-03-30-reset-v3';
+const wordStudyRewardDuration = 4300;
 const studyWords = Array.isArray(window.KAOYAN_WORDS) ? window.KAOYAN_WORDS : [];
 const dessertSuggestions = [
   '今日甜点：桂花糖蒸栗糕，软糯清甜，闻起来像秋天。',
@@ -231,6 +234,7 @@ const state = {
     loading: null,
   },
   wordStudy: null,
+  wordRewardTimer: null,
   wordExampleTranslationCache: {},
   wordExampleTranslationText: '',
   wordExampleTranslationVisible: false,
@@ -482,6 +486,7 @@ function createWordStudyState(dateKey = getTodayStudyKey()) {
     date: dateKey,
     remaining: buildDailyWordQueue(dateKey),
     completed: [],
+    rewardShown: false,
   };
 }
 
@@ -498,10 +503,10 @@ function loadWordStudyState() {
 
   try {
     const resetMarker = localStorage.getItem(wordStudyResetMarkerKey);
-    if (forceResetWordStudyDate === today && resetMarker !== today) {
+    if (forceResetWordStudyDate === today && resetMarker !== forceResetWordStudyToken) {
       state.wordStudy = createWordStudyState(today);
       saveWordStudyState();
-      localStorage.setItem(wordStudyResetMarkerKey, today);
+      localStorage.setItem(wordStudyResetMarkerKey, forceResetWordStudyToken);
       return state.wordStudy;
     }
 
@@ -519,6 +524,7 @@ function loadWordStudyState() {
       return state.wordStudy;
     }
 
+    parsed.rewardShown = parsed.rewardShown === true;
     state.wordStudy = parsed;
     return state.wordStudy;
   } catch (error) {
@@ -703,16 +709,42 @@ function showWordPanel() {
 
 function hideWordPanel() {
   wordPanel.classList.add('hidden');
+  hideWordReward();
+}
+
+function hideWordReward() {
+  if (state.wordRewardTimer) {
+    clearTimeout(state.wordRewardTimer);
+    state.wordRewardTimer = null;
+  }
+
+  wordReward.classList.add('hidden');
+}
+
+function showWordReward() {
+  hideWordReward();
+  wordReward.classList.remove('hidden');
+  setSpeech('已为三千明灯助力');
+  state.wordRewardTimer = setTimeout(() => {
+    wordReward.classList.add('hidden');
+    state.wordRewardTimer = null;
+  }, wordStudyRewardDuration);
 }
 
 function markWordChecked() {
   const studyState = getWordStudyState();
+  const wasIncomplete = studyState.completed.length < dailyWordGoal;
   const currentIndex = studyState.remaining.shift();
   if (currentIndex === undefined) {
     return;
   }
 
   studyState.completed.push(currentIndex);
+  const justCompleted = wasIncomplete && studyState.completed.length >= dailyWordGoal;
+  if (justCompleted && studyState.rewardShown !== true) {
+    studyState.rewardShown = true;
+    showWordReward();
+  }
   saveWordStudyState();
   renderWordStudyPanel();
   updateWordStudySpeech();
