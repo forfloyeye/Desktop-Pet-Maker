@@ -11,9 +11,35 @@
       <section id="pet-shell" class="pet-shell" aria-label="桌宠">
         <div id="speech" class="speech-bubble"><span id="speech-content" class="speech-bubble__content">可以给我一个馒头吗？</span></div>
         <div id="chat-panel" class="chat-panel hidden" aria-label="聊天输入">
-          <input id="chat-input" class="chat-input" type="text" maxlength="24" placeholder="想说什么？" />
+          <input id="chat-input" class="chat-input" type="text" maxlength="120" placeholder="想说什么？" />
           <button id="chat-send" class="chat-send" type="button">发送</button>
         </div>
+        <section id="word-panel" class="word-panel hidden" aria-label="今日背单词">
+          <div class="word-panel__header">
+            <div>
+              <div class="word-panel__eyebrow">考研单词</div>
+              <div id="word-progress" class="word-panel__progress">今日打卡 0/10</div>
+            </div>
+            <button id="word-close" class="word-panel__close" type="button">收起</button>
+          </div>
+          <div class="word-card">
+            <div id="word-term" class="word-card__term">abandon</div>
+            <div id="word-meaning" class="word-card__meaning">放弃；抛弃</div>
+            <div id="word-example" class="word-card__example">例句：Do not abandon your long-term plan lightly.</div>
+            <div id="word-example-actions" class="word-card__actions">
+              <button id="word-translate-toggle" class="word-card__toggle" type="button">查看译文</button>
+            </div>
+            <div id="word-example-translation" class="word-card__translation hidden"></div>
+            <div id="word-complete" class="word-complete hidden">
+              <div class="word-complete__title">今日单词列表</div>
+              <div id="word-complete-list" class="word-complete__list"></div>
+            </div>
+          </div>
+          <div id="word-actions" class="word-panel__actions">
+            <button id="word-skip" class="word-panel__secondary" type="button">再看一遍</button>
+            <button id="word-check" class="word-panel__primary" type="button">记住了，打卡</button>
+          </div>
+        </section>
         <section id="pet" class="pet facing-right mood-idle">
           <div class="pet-shadow"></div>
           <div id="pet-live2d" class="pet-live2d"></div>
@@ -38,6 +64,7 @@
         <button type="button" data-action="dessert">吃甜点</button>
         <button type="button" data-action="book">看书</button>
         <button type="button" data-action="rest">休息一下</button>
+        <button type="button" data-action="vocab">一起背单词</button>
         <button type="button" data-action="quit" class="menu-quit">退出</button>
       </section>
     </main>
@@ -45,6 +72,7 @@
     <script src="node_modules/pixi.js/dist/browser/pixi.min.js"></script>
     <script src="node_modules/live2dcubismcore/live2dcubismcore.min.js"></script>
     <script src="node_modules/pixi-live2d-display/dist/cubism4.min.js"></script>
+    <script src="word-bank.js"></script>
     <script src="renderer.js"></script>
   </body>
 </html>

@@ -22,6 +22,7 @@ let movementState = {
 let animationTimer;
 const ownThinkApiBaseUrl = 'https://api.ownthink.com/bot?spoken=';
 const qingyunkeApiBaseUrl = 'http://api.qingyunke.com/api.php?key=free&appid=0&msg=';
+const myMemoryTranslateApiBaseUrl = 'https://api.mymemory.translated.net/get?q=';
 const wikipediaSearchApiBaseUrl = 'https://zh.wikipedia.org/w/api.php?action=query&list=search&format=json&utf8=1&srsearch=';
 const wikipediaSummaryApiBaseUrl = 'https://zh.wikipedia.org/api/rest_v1/page/summary/';
 const comfortRules = [
@@ -212,6 +213,13 @@ function pickRandom(items) {
   return items[Math.floor(Math.random() * items.length)];
 }
 
+function normalizeTranslationText(text) {
+  return String(text || '')
+    .replace(/\r/g, '')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
+}
+
 function softenChatReply(message, reply) {
   const normalizedMessage = String(message || '').toLowerCase();
   let softened = normalizeRemoteReply(reply);
@@ -309,6 +317,35 @@ async function fetchChatReply(message) {
     }
 
     return await fetchQingyunkeReply(message, controller.signal);
+  } finally {
+    clearTimeout(timeoutId);
+  }
+}
+
+async function fetchExampleTranslation(text) {
+  const normalized = String(text || '').trim();
+  if (!normalized) {
+    return '';
+  }
+
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 5000);
+
+  try {
+    const response = await fetch(`${myMemoryTranslateApiBaseUrl}${encodeURIComponent(normalized)}&langpair=en|zh-CN`, {
+      signal: controller.signal,
+      headers: {
+        Accept: 'application/json',
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error(`Translation request failed: ${response.status}`);
+    }
+
+    const payload = await response.json();
+    const translatedText = normalizeTranslationText(payload && payload.responseData ? payload.responseData.translatedText : '');
+    return translatedText;
   } finally {
     clearTimeout(timeoutId);
   }
@@ -450,6 +487,20 @@ ipcMain.handle('pet:chat', async (_event, message) => {
     return await fetchChatReply(normalized);
   } catch (error) {
     console.warn('Failed to fetch remote chat reply:', error);
+    return '';
+  }
+});
+
+ipcMain.handle('pet:translate', async (_event, text) => {
+  const normalized = String(text || '').trim();
+  if (!normalized) {
+    return '';
+  }
+
+  try {
+    return await fetchExampleTranslation(normalized);
+  } catch (error) {
+    console.warn('Failed to fetch example translation:', error);
     return '';
   }
 });

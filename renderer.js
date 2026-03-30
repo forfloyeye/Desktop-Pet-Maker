@@ -8,12 +8,31 @@ const speechContent = document.getElementById('speech-content');
 const chatPanel = document.getElementById('chat-panel');
 const chatInput = document.getElementById('chat-input');
 const chatSend = document.getElementById('chat-send');
+const wordPanel = document.getElementById('word-panel');
+const wordProgress = document.getElementById('word-progress');
+const wordTerm = document.getElementById('word-term');
+const wordMeaning = document.getElementById('word-meaning');
+const wordExample = document.getElementById('word-example');
+const wordExampleActions = document.getElementById('word-example-actions');
+const wordTranslateToggle = document.getElementById('word-translate-toggle');
+const wordExampleTranslation = document.getElementById('word-example-translation');
+const wordComplete = document.getElementById('word-complete');
+const wordCompleteList = document.getElementById('word-complete-list');
+const wordActions = document.getElementById('word-actions');
+const wordCheck = document.getElementById('word-check');
+const wordSkip = document.getElementById('word-skip');
+const wordClose = document.getElementById('word-close');
 const menuViewportPadding = 4;
 
 const defaultSpeech = '可以给我一个馒头吗？';
 const restPrompt = '需要我陪你聊聊天吗？';
 const maxChatInputLength = 120;
 const maxReplyLength = 300;
+const dailyWordGoal = 10;
+const wordStudyStorageKey = 'desktop-pet-word-study';
+const wordStudyResetMarkerKey = 'desktop-pet-word-study-reset-marker';
+const forceResetWordStudyDate = '2026-03-30';
+const studyWords = Array.isArray(window.KAOYAN_WORDS) ? window.KAOYAN_WORDS : [];
 const dessertSuggestions = [
   '今日甜点：桂花糖蒸栗糕，软糯清甜，闻起来像秋天。',
   '今日甜点：杨枝甘露，芒果香很足，冰冰凉凉正合适。',
@@ -182,6 +201,14 @@ const actionMap = {
     prop: true,
     speed: 0,
   },
+  vocab: {
+    label: '一起背单词',
+    line: '今天也陪你一起背 10 个考研单词。',
+    mood: 'book',
+    walking: false,
+    prop: true,
+    speed: 0,
+  },
 };
 
 const state = {
@@ -203,6 +230,11 @@ const state = {
     model: null,
     loading: null,
   },
+  wordStudy: null,
+  wordExampleTranslationCache: {},
+  wordExampleTranslationText: '',
+  wordExampleTranslationVisible: false,
+  wordExampleTranslationPending: false,
 };
 
 function pickRandom(items) {
@@ -416,11 +448,286 @@ function setSpeech(text, options = {}) {
   speech.classList.toggle('speech-bubble--multiline', multiline);
 }
 
+function setSpeechVisibility(visible) {
+  speech.classList.toggle('hidden', !visible);
+}
+
 function clampChatText(text, maxLength) {
   return String(text || '')
     .replace(/\s+/g, ' ')
     .trim()
     .slice(0, maxLength);
+}
+
+function getTodayStudyKey() {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, '0');
+  const day = String(now.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+function buildDailyWordQueue(dateKey) {
+  if (!studyWords.length) {
+    return [];
+  }
+
+  const daySeed = Math.floor(new Date(`${dateKey}T00:00:00`).getTime() / 86400000);
+  const startIndex = (daySeed * dailyWordGoal) % studyWords.length;
+  return Array.from({ length: dailyWordGoal }, (_unused, index) => (startIndex + index) % studyWords.length);
+}
+
+function createWordStudyState(dateKey = getTodayStudyKey()) {
+  return {
+    date: dateKey,
+    remaining: buildDailyWordQueue(dateKey),
+    completed: [],
+  };
+}
+
+function saveWordStudyState() {
+  if (!state.wordStudy) {
+    return;
+  }
+
+  localStorage.setItem(wordStudyStorageKey, JSON.stringify(state.wordStudy));
+}
+
+function loadWordStudyState() {
+  const today = getTodayStudyKey();
+
+  try {
+    const resetMarker = localStorage.getItem(wordStudyResetMarkerKey);
+    if (forceResetWordStudyDate === today && resetMarker !== today) {
+      state.wordStudy = createWordStudyState(today);
+      saveWordStudyState();
+      localStorage.setItem(wordStudyResetMarkerKey, today);
+      return state.wordStudy;
+    }
+
+    const raw = localStorage.getItem(wordStudyStorageKey);
+    if (!raw) {
+      state.wordStudy = createWordStudyState(today);
+      saveWordStudyState();
+      return state.wordStudy;
+    }
+
+    const parsed = JSON.parse(raw);
+    if (!parsed || parsed.date !== today || !Array.isArray(parsed.remaining) || !Array.isArray(parsed.completed)) {
+      state.wordStudy = createWordStudyState(today);
+      saveWordStudyState();
+      return state.wordStudy;
+    }
+
+    state.wordStudy = parsed;
+    return state.wordStudy;
+  } catch (error) {
+    console.warn('Failed to load word study state:', error);
+    state.wordStudy = createWordStudyState(today);
+    saveWordStudyState();
+    return state.wordStudy;
+  }
+}
+
+function getWordStudyState() {
+  const today = getTodayStudyKey();
+  if (!state.wordStudy || state.wordStudy.date !== today) {
+    return loadWordStudyState();
+  }
+
+  return state.wordStudy;
+}
+
+function getCurrentStudyWord() {
+  const studyState = getWordStudyState();
+  const currentIndex = studyState.remaining[0];
+  return currentIndex === undefined ? null : studyWords[currentIndex];
+}
+
+function getWordExampleText(wordEntry) {
+  if (wordEntry && typeof wordEntry.example === 'string' && wordEntry.example.trim()) {
+    return `例句：${wordEntry.example.trim()}`;
+  }
+
+  return '例句：先记住这个词的意思，等会儿再回头复习它。';
+}
+
+function getRawWordExample(wordEntry) {
+  if (wordEntry && typeof wordEntry.example === 'string' && wordEntry.example.trim()) {
+    return wordEntry.example.trim();
+  }
+
+  return '';
+}
+
+function resetWordExampleTranslation() {
+  state.wordExampleTranslationText = '';
+  state.wordExampleTranslationVisible = false;
+  state.wordExampleTranslationPending = false;
+  wordExampleTranslation.textContent = '';
+  wordExampleTranslation.classList.add('hidden');
+  wordTranslateToggle.textContent = '查看译文';
+  wordTranslateToggle.disabled = false;
+}
+
+function renderWordExampleTranslation() {
+  if (!state.wordExampleTranslationVisible || !state.wordExampleTranslationText) {
+    wordExampleTranslation.textContent = '';
+    wordExampleTranslation.classList.add('hidden');
+    wordTranslateToggle.textContent = '查看译文';
+    return;
+  }
+
+  wordExampleTranslation.textContent = `译文：${state.wordExampleTranslationText}`;
+  wordExampleTranslation.classList.remove('hidden');
+  wordTranslateToggle.textContent = '收起译文';
+}
+
+async function toggleWordExampleTranslation() {
+  const currentWord = getCurrentStudyWord();
+  const rawExample = getRawWordExample(currentWord);
+
+  if (!rawExample || state.wordExampleTranslationPending) {
+    return;
+  }
+
+  if (state.wordExampleTranslationVisible) {
+    state.wordExampleTranslationVisible = false;
+    renderWordExampleTranslation();
+    return;
+  }
+
+  const cachedTranslation = state.wordExampleTranslationCache[rawExample];
+  if (cachedTranslation) {
+    state.wordExampleTranslationText = cachedTranslation;
+    state.wordExampleTranslationVisible = true;
+    renderWordExampleTranslation();
+    return;
+  }
+
+  state.wordExampleTranslationPending = true;
+  wordTranslateToggle.disabled = true;
+  wordTranslateToggle.textContent = '翻译中';
+
+  try {
+    const translated = String(await window.desktopPet.translate(rawExample) || '').trim();
+    state.wordExampleTranslationText = translated || '暂时没有拿到译文，你可以先结合释义理解这句例句。';
+    state.wordExampleTranslationCache[rawExample] = state.wordExampleTranslationText;
+    state.wordExampleTranslationVisible = true;
+    renderWordExampleTranslation();
+  } catch (error) {
+    console.warn('Failed to request example translation:', error);
+    state.wordExampleTranslationText = '暂时没有拿到译文，你可以先结合释义理解这句例句。';
+    state.wordExampleTranslationVisible = true;
+    renderWordExampleTranslation();
+  } finally {
+    state.wordExampleTranslationPending = false;
+    wordTranslateToggle.disabled = false;
+  }
+}
+
+function renderCompletedWordList(studyState) {
+  const todayQueue = buildDailyWordQueue(studyState.date);
+  const items = todayQueue
+    .map((index, position) => {
+      const wordEntry = studyWords[index];
+      if (!wordEntry) {
+        return '';
+      }
+
+      return `<div class="word-complete__item"><div class="word-complete__term">${position + 1}. ${wordEntry.word}</div><div class="word-complete__meaning">${wordEntry.meaning}</div></div>`;
+    })
+    .filter(Boolean)
+    .join('');
+
+  wordCompleteList.innerHTML = items || '<div class="word-complete__meaning">今天的单词列表还没有生成出来。</div>';
+}
+
+function updateWordStudySpeech() {
+  const studyState = getWordStudyState();
+  if (studyState.completed.length >= dailyWordGoal || studyState.remaining.length === 0) {
+    setSpeech('今日 10 个考研单词已经打卡完成，明天我们继续。');
+    return;
+  }
+
+  const currentWord = getCurrentStudyWord();
+  if (!currentWord) {
+    setSpeech('今天的背词卡片已经准备好了。');
+    return;
+  }
+
+  setSpeech(`今日背词 ${studyState.completed.length + 1}/${dailyWordGoal}：${currentWord.word}`);
+}
+
+function renderWordStudyPanel() {
+  const studyState = getWordStudyState();
+  wordProgress.textContent = `今日打卡 ${studyState.completed.length}/${dailyWordGoal}`;
+
+  if (studyState.completed.length >= dailyWordGoal || studyState.remaining.length === 0) {
+    wordTerm.textContent = '今日打卡完成';
+    wordMeaning.textContent = '10 个考研单词已经背完了，下面是今天的单词列表。';
+    wordExample.textContent = '今天已经完成打卡，可以顺手再过一遍加深印象。';
+    wordTranslateToggle.disabled = true;
+    wordTranslateToggle.textContent = '查看译文';
+    wordExampleActions.classList.add('hidden');
+    wordExampleTranslation.textContent = '';
+    wordExampleTranslation.classList.add('hidden');
+    wordTerm.classList.remove('hidden');
+    wordMeaning.classList.remove('hidden');
+    wordExample.classList.remove('hidden');
+    wordComplete.classList.remove('hidden');
+    wordActions.classList.add('hidden');
+    renderCompletedWordList(studyState);
+    return;
+  }
+
+  const currentWord = getCurrentStudyWord();
+  wordComplete.classList.add('hidden');
+  wordActions.classList.remove('hidden');
+  wordExampleActions.classList.remove('hidden');
+  wordTranslateToggle.disabled = false;
+  wordTerm.textContent = currentWord.word;
+  wordMeaning.textContent = currentWord.meaning;
+  wordExample.textContent = getWordExampleText(currentWord);
+  resetWordExampleTranslation();
+  wordCheck.disabled = false;
+  wordSkip.disabled = studyState.remaining.length <= 1;
+  wordCheck.textContent = '记住了，打卡';
+  wordSkip.textContent = '再看一遍';
+}
+
+function showWordPanel() {
+  renderWordStudyPanel();
+  wordPanel.classList.remove('hidden');
+}
+
+function hideWordPanel() {
+  wordPanel.classList.add('hidden');
+}
+
+function markWordChecked() {
+  const studyState = getWordStudyState();
+  const currentIndex = studyState.remaining.shift();
+  if (currentIndex === undefined) {
+    return;
+  }
+
+  studyState.completed.push(currentIndex);
+  saveWordStudyState();
+  renderWordStudyPanel();
+  updateWordStudySpeech();
+}
+
+function rotateWordCard() {
+  const studyState = getWordStudyState();
+  if (studyState.remaining.length <= 1) {
+    return;
+  }
+
+  studyState.remaining.push(studyState.remaining.shift());
+  saveWordStudyState();
+  renderWordStudyPanel();
+  updateWordStudySpeech();
 }
 
 function showChatPanel() {
@@ -513,8 +820,13 @@ async function handleChatSubmit() {
   }
 }
 
-function hideMenu() {
+function hideMenu(options = {}) {
+  const { resumeWalking = true } = options;
   menu.classList.add('hidden');
+
+  if (resumeWalking && state.action === 'walk' && !state.dragging) {
+    window.desktopPet.setWalking(true);
+  }
 }
 
 function positionMenu(x, y) {
@@ -542,22 +854,39 @@ async function applyAction(action) {
     speechText = pickRandom(dessertSuggestions);
     multiline = true;
     randomizeDessertBubble();
+    setSpeechVisibility(true);
   } else if (action === 'book') {
     const quote = pickRandom(readingQuotes);
     speechText = `${quote.text}\n${quote.source}`;
     multiline = true;
     setBubblePreset('topCenter');
+    setSpeechVisibility(true);
   } else if (action === 'rest') {
     speechText = restPrompt;
     setBubblePreset('topCenter');
     showChatPanel();
+    hideWordPanel();
+    setSpeechVisibility(true);
+  } else if (action === 'vocab') {
+    setBubblePreset('topCenter');
+    hideChatPanel();
+    showWordPanel();
+    updateWordStudySpeech();
+    speechText = speechContent.textContent;
+    setSpeechVisibility(false);
   } else {
     setBubblePreset('topCenter');
     hideChatPanel();
+    hideWordPanel();
+    setSpeechVisibility(true);
   }
 
   if (action !== 'rest') {
     hideChatPanel();
+  }
+
+  if (action !== 'vocab') {
+    hideWordPanel();
   }
 
   state.action = action;
@@ -584,7 +913,7 @@ async function applyAction(action) {
 }
 
 petShell.addEventListener('pointerdown', (event) => {
-  if (event.button !== 0 || menu.contains(event.target) || chatPanel.contains(event.target)) {
+  if (event.button !== 0 || menu.contains(event.target) || chatPanel.contains(event.target) || wordPanel.contains(event.target)) {
     return;
   }
 
@@ -637,6 +966,7 @@ window.addEventListener('pointercancel', endDrag);
 
 window.addEventListener('contextmenu', (event) => {
   event.preventDefault();
+  window.desktopPet.setWalking(false);
   positionMenu(event.clientX, event.clientY);
 });
 
@@ -658,8 +988,24 @@ menu.addEventListener('click', (event) => {
     return;
   }
 
+  hideMenu({ resumeWalking: false });
   applyAction(button.dataset.action);
-  hideMenu();
+});
+
+wordCheck.addEventListener('click', () => {
+  markWordChecked();
+});
+
+wordSkip.addEventListener('click', () => {
+  rotateWordCard();
+});
+
+wordTranslateToggle.addEventListener('click', () => {
+  toggleWordExampleTranslation();
+});
+
+wordClose.addEventListener('click', () => {
+  applyAction('walk');
 });
 
 chatSend.addEventListener('click', handleChatSubmit);
@@ -691,6 +1037,7 @@ window.addEventListener('keydown', (event) => {
 });
 
 async function initialize() {
+  loadWordStudyState();
   const config = await window.desktopPet.getConfig();
   setSkin(config);
   setBubblePreset('topCenter');

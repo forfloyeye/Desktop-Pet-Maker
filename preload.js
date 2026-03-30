@@ -16,6 +16,9 @@ contextBridge.exposeInMainWorld('desktopPet', {
   chat(message) {
     return ipcRenderer.invoke('pet:chat', message);
   },
+  translate(text) {
+    return ipcRenderer.invoke('pet:translate', text);
+  },
   getScreenSize() {
     return ipcRenderer.invoke('pet:get-screen-size');
   },
