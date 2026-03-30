@@ -315,7 +315,6 @@ body {
   box-shadow: 0 10px 22px rgba(90, 54, 18, 0.12);
   text-align: center;
   transform: translateX(var(--bubble-shift-x, -50%));
-  white-space: nowrap;
 }
 
 .pet-shell.bubble-front .speech-bubble {
@@ -330,7 +329,24 @@ body {
   width: var(--bubble-base-width, 236px);
   min-width: var(--bubble-base-width, 236px);
   max-width: var(--bubble-base-width, 236px);
-  white-space: pre-line;
+}
+
+.speech-bubble__content {
+  display: block;
+  max-height: calc(14px * 1.35 * 5);
+  overflow-x: hidden;
+  overflow-y: auto;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.speech-bubble__content::-webkit-scrollbar {
+  width: 6px;
+}
+
+.speech-bubble__content::-webkit-scrollbar-thumb {
+  background: rgba(90, 54, 18, 0.22);
+  border-radius: 999px;
 }
 
 .speech-bubble::after {
@@ -389,6 +405,10 @@ body {
   box-shadow: 0 0 0 3px rgba(241, 91, 93, 0.12);
 }
 
+.chat-input:disabled {
+  opacity: 0.72;
+}
+
 .chat-input::placeholder {
   color: rgba(95, 57, 21, 0.56);
 }
@@ -406,6 +426,11 @@ body {
 
 .chat-send:hover {
   background: #e14f51;
+}
+
+.chat-send:disabled {
+  cursor: default;
+  opacity: 0.78;
 }
 
 .pet-menu {

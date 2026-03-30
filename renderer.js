@@ -4,6 +4,7 @@ const menu = document.getElementById('menu');
 const live2dContainer = document.getElementById('pet-live2d');
 const petSprite = document.getElementById('pet-sprite');
 const speech = document.getElementById('speech');
+const speechContent = document.getElementById('speech-content');
 const chatPanel = document.getElementById('chat-panel');
 const chatInput = document.getElementById('chat-input');
 const chatSend = document.getElementById('chat-send');
@@ -11,8 +12,8 @@ const menuViewportPadding = 4;
 
 const defaultSpeech = '可以给我一个馒头吗？';
 const restPrompt = '需要我陪你聊聊天吗？';
-const maxChatInputLength = 24;
-const maxReplyLength = 18;
+const maxChatInputLength = 120;
+const maxReplyLength = 300;
 const dessertSuggestions = [
   '今日甜点：桂花糖蒸栗糕，软糯清甜，闻起来像秋天。',
   '今日甜点：杨枝甘露，芒果香很足，冰冰凉凉正合适。',
@@ -411,7 +412,7 @@ function setFacing(direction) {
 
 function setSpeech(text, options = {}) {
   const { multiline = false } = options;
-  speech.textContent = text || defaultSpeech;
+  speechContent.textContent = text || defaultSpeech;
   speech.classList.toggle('speech-bubble--multiline', multiline);
 }
 
@@ -431,9 +432,10 @@ function hideChatPanel() {
   petShell.classList.remove('chat-open');
   chatPanel.classList.add('hidden');
   chatInput.value = '';
+  setChatPending(false);
 }
 
-function buildChatReply(message) {
+function buildFallbackChatReply(message) {
   const normalized = clampChatText(message, maxChatInputLength).toLowerCase();
 
   if (!normalized) {
@@ -453,7 +455,34 @@ function buildChatReply(message) {
   return clampChatText(fallback, maxReplyLength) || '我有在认真听。';
 }
 
-function handleChatSubmit() {
+function normalizeChatReply(reply) {
+  return String(reply || '')
+    .replace(/\r/g, '')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim()
+    .slice(0, maxReplyLength);
+}
+
+function setChatPending(pending) {
+  chatInput.disabled = pending;
+  chatSend.disabled = pending;
+  chatSend.textContent = pending ? '稍等' : '发送';
+}
+
+async function requestChatReply(message) {
+  try {
+    const remoteReply = normalizeChatReply(await window.desktopPet.chat(message));
+    if (remoteReply) {
+      return remoteReply;
+    }
+  } catch (error) {
+    console.warn('Failed to request remote chat reply:', error);
+  }
+
+  return buildFallbackChatReply(message);
+}
+
+async function handleChatSubmit() {
   if (state.action !== 'rest') {
     return;
   }
@@ -466,7 +495,22 @@ function handleChatSubmit() {
 
   chatInput.value = '';
   setBubblePreset('topCenter');
-  setSpeech(buildChatReply(message));
+  setSpeech('让我想一下...');
+  setChatPending(true);
+
+  try {
+    const reply = await requestChatReply(message);
+    if (state.action !== 'rest') {
+      return;
+    }
+
+    setSpeech(reply, { multiline: reply.includes('\n') || reply.length > 18 });
+  } finally {
+    setChatPending(false);
+    if (state.action === 'rest') {
+      chatInput.focus();
+    }
+  }
 }
 
 function hideMenu() {
