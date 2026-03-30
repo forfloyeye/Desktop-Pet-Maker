@@ -169,7 +169,7 @@ function createWindow() {
   const petWidth = petConfig.skin.width || 150;
   const petHeight = petConfig.skin.height || 150;
   const bubbleWidthPadding = 180;
-  const bubbleHeightPadding = 232;
+  const bubbleHeightPadding = 310;
   const windowWidth = Math.max(260, petWidth + bubbleWidthPadding);
   const windowHeight = Math.max(300, petHeight + bubbleHeightPadding);
 
@@ -204,6 +204,11 @@ function createWindow() {
     petWindow.webContents.send('pet:config', petConfig);
     chooseRandomVelocity();
     syncFacingDirection();
+  });
+
+  petWindow.on('closed', () => {
+    petWindow = null;
+    dragState = null;
   });
 }
 
@@ -292,6 +297,10 @@ ipcMain.on('pet:snap-to-floor', () => {
   }
 
   moveToFloor(petWindow.getBounds().x);
+});
+
+ipcMain.on('pet:quit', () => {
+  app.quit();
 });
 
 app.on('window-all-closed', () => {

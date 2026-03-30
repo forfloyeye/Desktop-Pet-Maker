@@ -7,6 +7,7 @@ const speech = document.getElementById('speech');
 const chatPanel = document.getElementById('chat-panel');
 const chatInput = document.getElementById('chat-input');
 const chatSend = document.getElementById('chat-send');
+const menuViewportPadding = 4;
 
 const defaultSpeech = '可以给我一个馒头吗？';
 const restPrompt = '需要我陪你聊聊天吗？';
@@ -114,11 +115,11 @@ const readingQuotes = [
   },
 ];
 const bubblePresets = {
-  topCenter: { left: '50%', top: '18px', shiftX: '-50%', tailLeft: '50%' },
-  topLeft: { left: '34%', top: '24px', shiftX: '-50%', tailLeft: '68%' },
-  topRight: { left: '66%', top: '24px', shiftX: '-50%', tailLeft: '32%' },
-  upperLeft: { left: '26%', top: '54px', shiftX: '-50%', tailLeft: '78%' },
-  upperRight: { left: '74%', top: '54px', shiftX: '-50%', tailLeft: '22%' },
+  topCenter: { left: '50%', top: '132px', shiftX: '-50%', tailLeft: '50%' },
+  topLeft: { left: '34%', top: '126px', shiftX: '-50%', tailLeft: '68%' },
+  topRight: { left: '66%', top: '126px', shiftX: '-50%', tailLeft: '32%' },
+  upperLeft: { left: '26%', top: '112px', shiftX: '-50%', tailLeft: '78%' },
+  upperRight: { left: '74%', top: '112px', shiftX: '-50%', tailLeft: '22%' },
 };
 const restReplyRules = [
   {
@@ -216,7 +217,7 @@ function setBubblePreset(name = 'topCenter') {
 }
 
 function randomizeDessertBubble() {
-  const names = ['topLeft', 'topCenter', 'topRight', 'upperLeft', 'upperRight'];
+  const names = ['topLeft', 'topCenter'];
   setBubblePreset(pickRandom(names));
 }
 
@@ -473,8 +474,15 @@ function hideMenu() {
 }
 
 function positionMenu(x, y) {
-  menu.style.left = `${Math.min(x, window.innerWidth - 148)}px`;
-  menu.style.top = `${Math.min(y, window.innerHeight - 190)}px`;
+  menu.classList.remove('hidden');
+  const menuW = menu.offsetWidth;
+  const menuH = menu.offsetHeight;
+  const maxLeft = Math.max(menuViewportPadding, window.innerWidth - menuW - menuViewportPadding);
+  const maxTop = Math.max(menuViewportPadding, window.innerHeight - menuH - menuViewportPadding);
+  const nextLeft = Math.min(Math.max(x, menuViewportPadding), maxLeft);
+  const nextTop = Math.min(Math.max(y, menuViewportPadding), maxTop);
+  menu.style.left = `${nextLeft}px`;
+  menu.style.top = `${nextTop}px`;
 }
 
 async function applyAction(action) {
@@ -509,7 +517,7 @@ async function applyAction(action) {
   }
 
   state.action = action;
-  petShell.classList.toggle('bubble-front', action === 'dessert' || action === 'book');
+  petShell.classList.toggle('bubble-front', action === 'dessert' || action === 'book' || action === 'rest');
   pet.classList.remove('mood-idle', 'mood-dessert', 'mood-book', 'mood-rest', 'walking', 'show-prop');
   pet.classList.add(`mood-${next.mood}`);
 
@@ -586,7 +594,6 @@ window.addEventListener('pointercancel', endDrag);
 window.addEventListener('contextmenu', (event) => {
   event.preventDefault();
   positionMenu(event.clientX, event.clientY);
-  menu.classList.remove('hidden');
 });
 
 window.addEventListener('pointerdown', (event) => {
@@ -599,6 +606,11 @@ menu.addEventListener('click', (event) => {
   event.preventDefault();
   const button = event.target.closest('button[data-action]');
   if (!button) {
+    return;
+  }
+
+  if (button.dataset.action === 'quit') {
+    window.desktopPet.quit();
     return;
   }
 

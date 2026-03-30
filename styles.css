@@ -59,10 +59,6 @@ body {
   animation: float-idle 1.8s ease-in-out infinite;
 }
 
-.pet-shell.chat-open .pet {
-  bottom: 78px;
-}
-
 .pet-sprite {
   position: absolute;
   left: 50%;
@@ -351,9 +347,9 @@ body {
 }
 
 .chat-panel {
-  position: absolute;
-  left: 50%;
-  bottom: 8px;
+  position: fixed;
+  left: calc(18px + ((var(--pet-width, 150px) + 180px) / 2));
+  bottom: 18px;
   z-index: 6;
   display: flex;
   align-items: center;
@@ -444,6 +440,14 @@ body {
 
 .pet-menu button:hover {
   background: rgba(241, 91, 93, 0.12);
+}
+
+.pet-menu .menu-quit {
+  color: #e03131;
+}
+
+.pet-menu .menu-quit:hover {
+  background: rgba(224, 49, 49, 0.1);
 }
 
 @keyframes float-idle {
